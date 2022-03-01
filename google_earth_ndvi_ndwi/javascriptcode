@@ -1,0 +1,39 @@
+//Coleta as posições do mapa na região de Florianópolis - SC
+var imagePoint = ee.Geometry.Point([-49, -27.6935391]);
+var viewPoint = ee.Geometry.Point([-48.5449963, -27.5930994]);
+
+//Base de imagens geoespaciais utilizada
+//https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1_TOA
+var l8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_SR');
+//Informa o período de busca das imagens
+var l8Query =  l8
+    .filterBounds(imagePoint)
+    .filterDate('2021-01-01', '2021-12-31')
+    .sort('CLOUD_COVER');
+
+//Coleta a primeira imagem identificada para o período informado
+var image = ee.Image(l8Query.first());
+
+//Centraliza o mapa
+Map.centerObject(viewPoint, 13);
+
+//Coleta as bandas de cores NIR, Vermelho e Verde 
+var nir = image.select('B5');
+var red = image.select('B4');
+var green = image.select('B3');
+
+// Computa o Índice de Vegetação de Diferença Normalizada (NDVI).
+var ndvi = nir.subtract(red).divide(nir.add(red)).rename('NDVI');
+var ndviParams = {min: -1, max: 1, palette: ['red', 'white', 'green']};
+Map.addLayer(ndvi, ndviParams, 'NDVI image');
+
+
+// Computa o Índice de Água de Diferença Normalizada (NDWI).
+var ndwi = green.subtract(nir).divide(green.add(nir)).rename('NDVI');
+var ndwiParams = {min: -1, max: 1, palette: ['red', 'white', 'blue']};
+Map.addLayer(ndwi, ndwiParams, 'NDWI image');
+
+
+//Formas resumidas de coletar a informação
+//var ndvi = image.normalizedDifference(['B5', 'B4']).rename('NDVI');
+//var ndwi = image.normalizedDifference(['B3', 'B5']).rename('NDVI');
